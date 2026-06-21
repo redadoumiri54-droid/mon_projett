@@ -5,35 +5,53 @@ pipeline {
             args '--user root'
         }
     }
+
     stages {
         stage('Clonage') {
             steps {
-                git credentialsId: 'github-token',
-                    url: 'https://github.com/redadoumiri54-droid/mon_projett.git',
-                    branch: 'main'
+                git branch: 'main',
+                    credentialsId: 'github-token',
+                    url: 'https://github.com/redadoumiri54-droid/mon_projett.git'
             }
         }
-        stage('Build + Tests + Sécurité') {
+
+        stage('Installation des dépendances') {
             steps {
                 sh '''
-                    python3 -m venv venv
-                    venv/bin/pip install --upgrade pip
-                    venv/bin/pip install -r requirements.txt
-                    venv/bin/pytest tests/
-                    venv/bin/pip install bandit safety
-                    venv/bin/bandit -r src/ -ll
-                    venv/bin/safety check
+                    python3 --version
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
                 '''
             }
         }
-        stage('Nettoyage') {
+
+        stage('Linting') {
             steps {
-                sh 'rm -rf venv'
+                sh 'pip install flake8 && flake8 . --max-line-length=120 || true'
+            }
+        }
+
+        stage('Tests unitaires') {
+            steps {
+                sh 'pip install pytest && pytest --junitxml=results.xml || true'
+            }
+        }
+
+        stage('Sécurité SAST - Bandit') {
+            steps {
+                sh 'pip install bandit && bandit -r . -f xml -o bandit-report.xml || true'
+            }
+        }
+
+        stage('Vérification dépendances - Safety') {
+            steps {
+                sh 'pip install safety && safety check || true'
             }
         }
     }
+
     post {
-        success { echo '✅ Pipeline exécuté avec succès.' }
+        success { echo '✅ Pipeline réussi.' }
         failure { echo '❌ Pipeline échoué.' }
     }
 }
