@@ -6,7 +6,7 @@ pipeline {
         stage('Clonage') {
             steps {
                 git credentialsId: 'github-token',
-                    url: 'https://github.com/TON_USER/mon_projet.git',
+                    url: 'https://github.com/redadoumiri54-droid/mon_projett.git',
                     branch: 'main'
             }
         }
